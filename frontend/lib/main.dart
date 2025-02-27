@@ -16,7 +16,7 @@ class SkincareApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const LoginPage(), // Set LoginPage as the initial screen
+      home: LoginPage(), // Set LoginPage as the initial screen
     );
   }
 }
