@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ForgotPasswordPage extends StatefulWidget {
-  final String baseUrl; // Pass the backend URL
+  final String baseUrl;
 
   ForgotPasswordPage({required this.baseUrl});
 

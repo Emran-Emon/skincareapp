@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class RegisterPage extends StatefulWidget {
-  final String baseUrl; // Pass the backend URL from LoginPage
+  final String baseUrl;
 
   RegisterPage({required this.baseUrl});
 

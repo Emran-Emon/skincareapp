@@ -13,10 +13,10 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Replace with your Node.js backend URL
-  final String baseUrl = "http://192.168.0.103:3000"; // Use your IP or Ngrok URL if testing on a physical device
 
-  String? _authToken; // To store the JWT token after login
+  final String baseUrl = "http://192.168.0.103:3000";
+
+  String? _authToken;
 
   Future<void> login() async {
     final url = Uri.parse('$baseUrl/login');
@@ -35,7 +35,7 @@ class _LoginPageState extends State<LoginPage> {
         final data = jsonDecode(response.body);
         print('Login successful! Token: ${data['token']}');
         setState(() {
-          _authToken = data['token']; // Save the token for further use
+          _authToken = data['token'];
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Login successful!')),
