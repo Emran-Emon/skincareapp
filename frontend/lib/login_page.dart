@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'register_page.dart';
 import 'forgot_pass.dart';
+import 'profile_page.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,7 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
 
 
-  final String baseUrl = "http://192.168.0.103:3000";
+  final String baseUrl = "https://firstly-popular-bunny.ngrok-free.app";
 
   String? _authToken;
 
@@ -39,6 +40,12 @@ class _LoginPageState extends State<LoginPage> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Login successful!')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfilePage(token: data['token'], baseUrl: baseUrl),
+          ),
         );
       } else {
         print('Error during login: ${response.body}');

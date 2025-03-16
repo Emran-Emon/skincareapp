@@ -120,8 +120,46 @@ app.get('/protected', (req, res) => {
       res.status(400).json({ error: 'Invalid token' });
     }
   });
+ 
+  app.patch('/update-profile', async (req, res) => {
+    const token = req.headers['authorization'];
+    if (!token) return res.status(401).json({ error: 'Access denied' });
   
+    try {
+      const decoded = jwt.verify(token.split(' ')[1], 'your_jwt_secret');
+      const { username, email, password } = req.body;
+  
+      // Validate input data
+      if (!username || !email || !password) {
+        return res.status(400).json({ error: 'All fields are required' });
+      }
+  
+      // Update user document in MongoDB
+      await User.findByIdAndUpdate(decoded.id, {
+        username,
+        email,
+        password: await bcrypt.hash(password, 10),
+      });
+  
+      res.status(200).json({ message: 'Profile updated successfully' });
+    } catch (err) {
+      console.error(err);
+      res.status(400).json({ error: 'Invalid token or server error' });
+    }
+  });  
 
+  app.post('/logout', async (req, res) => {
+    try {
+      // Clear the JWT token by setting an expired cookie
+      res.cookie('jwt', '', { maxAge: 1 });
+      
+      res.status(200).json({ message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
 // Start Server
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Node.js server running on http://localhost:${PORT}`));
