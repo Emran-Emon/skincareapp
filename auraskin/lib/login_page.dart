@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   String? _authToken;
 
   Future<void> login() async {
-    final url = Uri.parse('$baseUrl/login');
+    final url = Uri.parse('$baseUrl/auth/login');
 
     try {
       final response = await http.post(

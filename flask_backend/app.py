@@ -1,30 +1,32 @@
-from flask import Flask, request, jsonify
-import os
+from flask import Flask
 from flask_cors import CORS
-from face_mesh import detect_face_landmarks
+from flask_pymongo import PyMongo
+import os
+from analysis.routes import analysis_bp
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Load configuration
+app.config.from_object('config.Config')
 
-@app.route('/analyze_skin', methods=['POST'])
-def analyze_skin():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+# Initialize MongoDB
+mongo = PyMongo(app)
 
-    file = request.files['file']
-    file_path = os.path.join(UPLOAD_FOLDER, "captured_image.jpg")
-    file.save(file_path)
+# Create upload folder if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-    # Call face detection function from face_mesh.py
-    detected_landmarks, processed_image_path = detect_face_landmarks(file_path)
+# Store mongo in app context for blueprint access
+app.mongo = mongo
 
-    if detected_landmarks is None:
-        return jsonify({"message": "No face detected"}), 200
+# Register blueprints
+from auth.routes import auth_bp
+from analysis.routes import analysis_bp
 
-    return jsonify({"message": "Face detected", "landmarks": detected_landmarks})
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(analysis_bp, url_prefix='/analysis')
 
+# Run the app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)

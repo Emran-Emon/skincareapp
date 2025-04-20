@@ -17,7 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> register() async {
-    final url = Uri.parse('${widget.baseUrl}/register'); // Backend URL
+    final url = Uri.parse('${widget.baseUrl}/register');
 
     try {
       final response = await http.post(
