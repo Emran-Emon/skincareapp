@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 import os
 import cv2
 import mediapipe as mp
+import pyheif
+from PIL import Image
 
 analysis_bp = Blueprint('analysis', __name__)
 
@@ -19,6 +21,20 @@ RIGHT_EYE = [33, 133]
 LEFT_EYE = [263, 362]
 NOSE_TIP = [1]
 MOUTH = [61, 146, 291, 375]
+
+
+def convert_heic_to_jpg(src_path, dest_path):
+    try:
+        heif_file = pyheif.read(src_path)
+        image = Image.frombytes(
+            heif_file.mode, heif_file.size, heif_file.data,
+            "raw", heif_file.mode, heif_file.stride
+        )
+        image.save(dest_path, format="JPEG")
+        return dest_path
+    except Exception as e:
+        print("HEIC conversion error:", str(e))
+        return None
 
 def detect_face_landmarks(image_path):
     image = cv2.imread(image_path)
@@ -60,7 +76,6 @@ def detect_face_landmarks(image_path):
             detected_landmarks["mouth"].append({"x": point.x, "y": point.y})
             cv2.circle(image, (x, y), 3, (255, 255, 0), -1)
 
-        # Draw full mesh
         mp_drawing.draw_landmarks(
             image=image,
             landmark_list=face_landmarks,
@@ -79,10 +94,22 @@ def analyze_skin():
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files['file']
-    file_path = os.path.join(UPLOAD_FOLDER, "captured_image.jpg")
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
 
-    face_detected, landmarks, _ = detect_face_landmarks(file_path)
+    ext = os.path.splitext(file_path)[1].lower()
+
+    if ext == ".heic":
+        converted_path = os.path.join(UPLOAD_FOLDER, "converted.jpg")
+        result_path = convert_heic_to_jpg(file_path, converted_path)
+        if result_path is None:
+            return jsonify({"error": "HEIC conversion failed"}), 500
+        image_path = result_path
+    else:
+        image_path = os.path.join(UPLOAD_FOLDER, "captured_image.jpg")
+        os.rename(file_path, image_path)
+
+    face_detected, landmarks, _ = detect_face_landmarks(image_path)
 
     if not face_detected:
         return jsonify({
