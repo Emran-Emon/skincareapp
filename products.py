@@ -3,7 +3,7 @@ import json
 
 # Connect to MongoDB
 client = MongoClient("mongodb://localhost:27017/")
-db = client["skincare_app"]
+db = client["skincareapp"]
 collection = db["products"]
 
 # Load JSON file
