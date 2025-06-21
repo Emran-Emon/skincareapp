@@ -59,7 +59,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               const SizedBox(height: 50),
               Center(
                 child:
-                Image.asset('assets/skincare_logo.png', height: 150), // Logo
+                Image.asset('assets/Pasted Graphic 1.png', height: 150), // Logo
               ),
               const SizedBox(height: 30),
               TextField(

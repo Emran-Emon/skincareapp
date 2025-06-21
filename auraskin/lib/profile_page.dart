@@ -26,7 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> fetchUserProfile() async {
-    final url = Uri.parse('${widget.baseUrl}/profile');
+    final url = Uri.parse('${widget.baseUrl}/auth/profile');
     try {
       final response = await http.get(
         url,
@@ -65,9 +65,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         const TextSpan(text: 'Welcome, '),
                         TextSpan(
-                          text: userData['username'] ?? 'User',
+                          text: userData['username'] ?? '',
                           style: const TextStyle(
-                            color: Colors.blue,
+                            color: Colors.brown,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -81,7 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Colors.brown,
                         padding: const EdgeInsets.all(15),
                       ),
                       onPressed: () {
@@ -109,7 +109,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     margin: const EdgeInsets.symmetric(vertical: 10),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Colors.brown,
                         padding: const EdgeInsets.all(15),
                       ),
                       onPressed: () {
@@ -150,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 foregroundColor: Colors.black, // Black text color
               ),
               onPressed: () async {
-                final url = Uri.parse('${widget.baseUrl}/logout');
+                final url = Uri.parse('${widget.baseUrl}/auth/logout');
                 try {
                   final response = await http.post(
                     url,

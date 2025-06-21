@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 import os
 from analysis.routes import analysis_bp
+from auth.routes import auth_bp
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -10,6 +11,8 @@ CORS(app)
 
 # Load configuration
 app.config.from_object('config.Config')
+app.config["MONGO_URI"] = "mongodb://localhost:27017/skincareapp"
+app.config['SECRET_KEY'] = 'your_jwt_secret'
 
 # Initialize MongoDB
 mongo = PyMongo(app)

@@ -4,8 +4,11 @@ import jwt
 import datetime
 import smtplib
 from email.mime.text import MIMEText
+from bson.objectid import ObjectId
+from flask_pymongo import PyMongo
 
 auth_bp = Blueprint('auth', __name__)
+mongo = PyMongo()
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -81,6 +84,32 @@ def forgot_password():
     except Exception as e:
         return jsonify({'error': 'Failed to send email', 'details': str(e)}), 500
 
+@auth_bp.route('/profile', methods=['GET'])
+def get_profile():
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'error': 'Token missing'}), 401
+
+    try:
+        token = token.split(" ")[1]
+        decoded = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+
+        mongo = current_app.mongo
+        user = mongo.db.users.find_one({"_id": ObjectId(decoded['id'])})
+
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        return jsonify({
+            "username": user.get('username'),
+            "email": user.get('email'),
+            "role": user.get('role', 'user')
+        }), 200
+
+    except Exception as e:
+        print("Profile error:", str(e))
+        return jsonify({'error': 'Invalid token or internal error'}), 400
+    
 @auth_bp.route('/update-profile', methods=['PATCH'])
 def update_profile():
     token = request.headers.get('Authorization')

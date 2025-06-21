@@ -107,8 +107,20 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
+      backgroundColor: Colors.transparent,
+        body: Container(
+        decoration: const BoxDecoration(
+        gradient: RadialGradient(
+        center: Alignment.center,
+        radius: 1.0,
+        colors: [
+        Color(0xFFF5E6EB),
+        Color(0xFFBC8F8F),
+       ],
+      ),
+    ),
+      child: SizedBox.expand(
+      child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -117,19 +129,19 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 50),
               Center(
                 child: Text(
-                  'Welcome to Personalized Skincare Advisor',
+                  'Welcome to AuraSkin!\nYour Personalized Skincare Advisor',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
+                    color: Colors.brown,
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               Center(
                 child: Image.asset(
-                  'assets/skincare_logo.png', // Add your logo here
+                  'assets/Pasted Graphic 1.png',
                   height: 150,
                 ),
               ),
@@ -176,7 +188,8 @@ class _LoginPageState extends State<LoginPage> {
                   child:
                   const Text("Forgot Password?", style:
                   TextStyle(color:
-                  Colors.blueAccent, fontSize:
+                  Colors.brown, fontWeight:
+                  FontWeight.bold, fontSize:
                   14.0)),
                 ),
               ),
@@ -192,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
                     child:
                     const Text('Register Now', style:
                     TextStyle(color:
-                    Colors.blueAccent, fontWeight:
+                    Colors.brown, fontWeight:
                     FontWeight.bold)),
                   )
                 ],
@@ -201,6 +214,8 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
+        ),
+        ),
     );
   }
 }

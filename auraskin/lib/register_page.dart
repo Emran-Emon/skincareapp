@@ -17,7 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
 
   Future<void> register() async {
-    final url = Uri.parse('${widget.baseUrl}/register');
+    final url = Uri.parse('${widget.baseUrl}/auth/register');
 
     try {
       final response = await http.post(
@@ -66,7 +66,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 50),
               Center(
                 child:
-                Image.asset('assets/skincare_logo.png', height: 150), // Logo
+                Image.asset('assets/Pasted Graphic 1.png', height: 150), // Logo
               ),
               const SizedBox(height: 30),
               TextField(

@@ -6,3 +6,7 @@ pyjwt
 mediapipe
 opencv-python
 numpy
+PyJWT
+pymongo
+dnspython
+flask-pymongo
