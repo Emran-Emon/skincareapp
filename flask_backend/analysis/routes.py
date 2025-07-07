@@ -1,14 +1,20 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 import os
 import cv2
 import mediapipe as mp
 import pyheif
+import tensorflow as tf
 from PIL import Image
+import numpy as np
 
 analysis_bp = Blueprint('analysis', __name__)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Load model once at startup
+model = tf.keras.models.load_model("MODEL.h5")
+class_labels = ['Acne', 'Dark Circles', 'Pigmentation', 'Wrinkles']
 
 # Mediapipe setup
 mp_face_mesh = mp.solutions.face_mesh
@@ -21,7 +27,6 @@ RIGHT_EYE = [33, 133]
 LEFT_EYE = [263, 362]
 NOSE_TIP = [1]
 MOUTH = [61, 146, 291, 375]
-
 
 def convert_heic_to_jpg(src_path, dest_path):
     try:
@@ -88,6 +93,31 @@ def detect_face_landmarks(image_path):
     cv2.imwrite(processed_path, image)
     return True, detected_landmarks, processed_path
 
+def preprocess_for_model(image_path):
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (224, 224))
+    image = image / 255.0
+    return np.expand_dims(image, axis=0)
+
+@analysis_bp.route('/skin_type_recommendations', methods=['GET'])
+def skin_type_recommendations():
+    skin_type = request.args.get('type', '').strip()
+    query_field = f"{skin_type} Skin"
+
+    mongo = current_app.mongo
+    raw_products = mongo.db.products.find({"Skin Concerns": query_field})
+    recommended_products = []
+    for product in raw_products:
+        recommended_products.append({
+            "skin_concern": str(product.get("Skin Concerns", "")).strip(),
+            "product": str(product.get("Product", "")).strip(),
+            "type": str(product.get("Product Type", "")).strip(),
+            "ingredients": str(product.get("Ingredients", "")).strip(),
+            "reviews": str(product.get("Reviews", "")).strip(),
+        })
+
+    return jsonify({"recommended_products": recommended_products}), 200
+
 @analysis_bp.route('/analyze_skin', methods=['POST'])
 def analyze_skin():
     if 'file' not in request.files:
@@ -98,7 +128,6 @@ def analyze_skin():
     file.save(file_path)
 
     ext = os.path.splitext(file_path)[1].lower()
-
     if ext == ".heic":
         converted_path = os.path.join(UPLOAD_FOLDER, "converted.jpg")
         result_path = convert_heic_to_jpg(file_path, converted_path)
@@ -114,11 +143,36 @@ def analyze_skin():
     if not face_detected:
         return jsonify({
             "face_detected": False,
-            "message": "No face detected"
+            "message": "No face detected",
+            "analysis": [],
+            "recommended_products": []
         }), 200
 
+    # Predict skin issue
+    input_image = preprocess_for_model(image_path)
+    predictions = model.predict(input_image)
+    predicted_class_index = np.argmax(predictions)
+    predicted_skin_issue = class_labels[predicted_class_index]
+
+    # Fetch recommended products from MongoDB
+    mongo = current_app.mongo
+    raw_products = list(mongo.db.products.find(
+        {"Skin Concerns": predicted_skin_issue}, {"_id": 0}).limit(50))
+
+    recommended_products = []
+    for product in raw_products:
+        recommended_products.append({
+            "skin_concern": str(product.get("Skin Concerns", "")).strip(),
+            "product": str(product.get("Product", "")).strip(),
+            "type": str(product.get("Product Type", "")).strip(),
+            "ingredients": str(product.get("Ingredients", "")).strip(),
+            "reviews": str(product.get("Reviews", "")).strip(),
+    })
+        
     return jsonify({
         "face_detected": True,
         "message": "Face detected successfully",
-        "landmarks": landmarks
+        "landmarks": landmarks,
+        "analysis": predicted_skin_issue,
+        "recommended_products": recommended_products
     }), 200

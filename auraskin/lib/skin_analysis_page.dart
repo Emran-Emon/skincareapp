@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:http/http.dart' as http;
+import 'product_recommendations_page.dart';
 
 class SkinAnalysisPage extends StatefulWidget {
   @override
@@ -18,6 +19,7 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
   bool _isCameraInitialized = false;
   bool _isProcessing = false;
   String? _analysisResult;
+  List<dynamic>? _productRecommendations;
 
   bool _isFrontCamera = false;
   int _selectedRearCameraIndex = 0;
@@ -77,39 +79,16 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
     setState(() {
       _isProcessing = true;
       _analysisResult = null;
+      _productRecommendations = null;
     });
 
     try {
       await _initializeControllerFuture;
       final image = await _controller.takePicture();
       final File imageFile = File(image.path);
-      final response = await _sendImageToFlask(imageFile);
 
-      setState(() {
-        _analysisResult = response;
-        _isProcessing = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Analysis complete!")),
-      );
-    } catch (e) {
-      print("Error capturing or sending image: $e");
-      setState(() {
-        _isProcessing = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error processing image")),
-      );
-    }
-  }
-
-  Future<String> _sendImageToFlask(File imageFile) async {
-    try {
       var request = http.MultipartRequest('POST', Uri.parse(flaskApiUrl));
       request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
-
       var response = await request.send();
 
       if (response.statusCode == 200) {
@@ -117,22 +96,55 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
         final Map<String, dynamic> jsonResponse = jsonDecode(responseBody);
 
         if (jsonResponse['face_detected'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(jsonResponse['message'] ?? 'Face Detected')),
+          final analysis = jsonResponse['analysis'];
+          final recommendations = jsonResponse['recommended_products'];
+
+          setState(() {
+            _analysisResult = (analysis is List)
+                ? analysis.join(', ')
+                : analysis?.toString() ?? 'No analysis';
+            _productRecommendations = List<dynamic>.from(recommendations ?? []);
+            _isProcessing = false;
+          });
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("Skin Analysis Result"),
+              content: Text("You have $_analysisResult"),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductRecommendationsPage(
+                          products: _productRecommendations!,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text("See recommended products to overcome your skin problem"),
+                ),
+              ],
+            ),
           );
         } else {
+          setState(() => _isProcessing = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No face detected')),
+            const SnackBar(content: Text('No face detected')),
           );
         }
-
-        return jsonResponse['analysis'] ?? 'No analysis';
       } else {
-        return "Error: ${response.reasonPhrase}";
+        throw Exception("Error: ${response.reasonPhrase}");
       }
     } catch (e) {
-      print("Failed to connect to Flask: $e");
-      return "Failed to connect to server";
+      print("Error capturing or sending image: $e");
+      setState(() => _isProcessing = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error processing image")),
+      );
     }
   }
 
@@ -212,8 +224,6 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
               color: Colors.black.withOpacity(0.5),
               child: Center(child: CircularProgressIndicator()),
             ),
-
-          // Capture Button
           Positioned(
             bottom: 40,
             child: GestureDetector(
@@ -239,22 +249,8 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
               ),
             ),
           ),
-
           _buildFlipButton(),
           _buildLensButtons(),
-
-          if (_analysisResult != null)
-            Positioned(
-              top: 80,
-              child: Container(
-                padding: EdgeInsets.all(10),
-                color: Colors.white,
-                child: Text(
-                  _analysisResult!,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
         ],
       )
           : Center(child: CircularProgressIndicator()),

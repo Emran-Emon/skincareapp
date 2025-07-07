@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'edit_profile_page.dart';
 import 'login_page.dart';
 import 'skin_analysis_page.dart';
+import 'skin_type_selection_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final String token;
@@ -96,7 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                       },
                       child: const Text(
-                        'Edit Profile',
+                        'Edit Your Profile',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.white,
@@ -127,6 +128,35 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown,
+                        padding: const EdgeInsets.all(15),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SkinTypeSelectionPage(baseUrl: widget.baseUrl),
+                          ),
+                        );
+                      },
+                      child: Center(
+                        child: Text(
+                          'Recommended Products for Your Skin Type',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
                   if (isAdmin)
                     ListTile(
                       title: const Text('User Management'),
@@ -139,6 +169,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
