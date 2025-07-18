@@ -106,6 +106,7 @@ def skin_type_recommendations():
 
     mongo = current_app.mongo
     raw_products = mongo.db.products.find({"Skin Concerns": query_field})
+
     recommended_products = []
     for product in raw_products:
         recommended_products.append({
@@ -114,6 +115,7 @@ def skin_type_recommendations():
             "type": str(product.get("Product Type", "")).strip(),
             "ingredients": str(product.get("Ingredients", "")).strip(),
             "reviews": str(product.get("Reviews", "")).strip(),
+            "price": str(product.get("Price", "")).strip()
         })
 
     return jsonify({"recommended_products": recommended_products}), 200
@@ -144,20 +146,23 @@ def analyze_skin():
         return jsonify({
             "face_detected": False,
             "message": "No face detected",
-            "analysis": [],
+            "analysis": {},
             "recommended_products": []
         }), 200
 
-    # Predict skin issue
+    # Predict skin concerns
     input_image = preprocess_for_model(image_path)
-    predictions = model.predict(input_image)
-    predicted_class_index = np.argmax(predictions)
-    predicted_skin_issue = class_labels[predicted_class_index]
+    predictions = model.predict(input_image)[0]
+    prediction_dict = {
+        class_labels[i]: f"{(predictions[i] * 100):.2f}%"
+        for i in range(len(class_labels))
+    }
+    top_class = class_labels[np.argmax(predictions)]
 
-    # Fetch recommended products from MongoDB
+    # Fetch recommended products for top class
     mongo = current_app.mongo
     raw_products = list(mongo.db.products.find(
-        {"Skin Concerns": predicted_skin_issue}, {"_id": 0}).limit(50))
+        {"Skin Concerns": top_class}, {"_id": 0}).limit(50))
 
     recommended_products = []
     for product in raw_products:
@@ -167,12 +172,13 @@ def analyze_skin():
             "type": str(product.get("Product Type", "")).strip(),
             "ingredients": str(product.get("Ingredients", "")).strip(),
             "reviews": str(product.get("Reviews", "")).strip(),
-    })
-        
+            "price": str(product.get("Price", "")).strip()
+        })
+
     return jsonify({
         "face_detected": True,
         "message": "Face detected successfully",
         "landmarks": landmarks,
-        "analysis": predicted_skin_issue,
+        "analysis": prediction_dict,
         "recommended_products": recommended_products
     }), 200
