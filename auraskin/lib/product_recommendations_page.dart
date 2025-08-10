@@ -27,11 +27,28 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
   @override
   void initState() {
     super.initState();
+
     _displayedProducts = List.from(widget.products);
-    _skinConcernFilters.addAll({
-      ...widget.products.map((p) => p['skin_concern'] ?? '').toSet(),
-      if (widget.modelOutput != null) ...widget.modelOutput!.keys,
-    });
+
+    final productConcerns = widget.products
+        .map((p) => (p['skin_concern'] ?? '').toString())
+        .where((c) => c.isNotEmpty)
+        .toSet();
+
+    final trueConcerns = <String>{};
+    if (widget.modelOutput != null) {
+      widget.modelOutput!.forEach((key, value) {
+        if (value == true ) {
+          trueConcerns.add(key);
+        }
+      });
+
+      print('modelOutput: ${widget.modelOutput}');
+      print('trueConcerns: $trueConcerns');
+      print('_skinConcernFilters: $_skinConcernFilters');
+    }
+
+    _skinConcernFilters = ['All', ...productConcerns, ...trueConcerns].toSet().toList();
   }
 
   List<dynamic> _filteredProducts() {

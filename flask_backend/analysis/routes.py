@@ -4,17 +4,42 @@ import cv2
 import mediapipe as mp
 import pyheif
 import tensorflow as tf
+import torch
 from PIL import Image
 import numpy as np
+from ultralytics import YOLO
 
+# Flask Blueprint
 analysis_bp = Blueprint('analysis', __name__)
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Load model once at startup
-model = tf.keras.models.load_model("MODEL.h5")
-class_labels = ['Acne', 'Dark Circles', 'Pigmentation', 'Wrinkles']
+w_pos_values = np.array([4.0, 5.7, 9.0], dtype=np.float32)
+w_neg_values = np.ones_like(w_pos_values, dtype=np.float32)
+
+w_pos = tf.constant(w_pos_values, dtype=tf.float32)
+w_neg = tf.constant(w_neg_values, dtype=tf.float32)
+
+@tf.keras.utils.register_keras_serializable()
+def weighted_bce(y_true, y_pred, smooth=0.05):
+    # label smoothing to reduce overconfidence
+    y_true = y_true * (1.0 - smooth) + 0.5 * smooth
+    bce = tf.keras.backend.binary_crossentropy(y_true, y_pred)
+    weights = y_true * w_pos + (1.0 - y_true) * w_neg
+    return tf.reduce_mean(bce * weights)
+
+# Load TensorFlow skin model with custom loss
+skin_model = tf.keras.models.load_model(
+    "skin_3label.keras",
+    custom_objects={"weighted_bce": weighted_bce}
+)
+skin_labels = ['Acne', 'Pigmentation', 'Wrinkles']
+
+# Load Ultralytics YOLOv8 model for dark circles detection
+dark_model = YOLO("dark_circles.pt")
+dark_model.eval()
+dark_label = ['Dark circles']
 
 # Mediapipe setup
 mp_face_mesh = mp.solutions.face_mesh
@@ -93,11 +118,19 @@ def detect_face_landmarks(image_path):
     cv2.imwrite(processed_path, image)
     return True, detected_landmarks, processed_path
 
-def preprocess_for_model(image_path):
+def preprocess_for_tf(image_path):
     image = cv2.imread(image_path)
     image = cv2.resize(image, (224, 224))
     image = image / 255.0
     return np.expand_dims(image, axis=0)
+
+def preprocess_for_torch(image_path):
+    image = Image.open(image_path).convert("RGB")
+    image = image.resize((224, 224))
+    image = np.array(image).astype(np.float32) / 255.0
+    image = np.transpose(image, (2, 0, 1))
+    image = torch.tensor(image).unsqueeze(0)
+    return image
 
 @analysis_bp.route('/skin_type_recommendations', methods=['GET'])
 def skin_type_recommendations():
@@ -150,16 +183,41 @@ def analyze_skin():
             "recommended_products": []
         }), 200
 
-    # Predict skin concerns
-    input_image = preprocess_for_model(image_path)
-    predictions = model.predict(input_image)[0]
-    prediction_dict = {
-        class_labels[i]: f"{(predictions[i] * 100):.2f}%"
-        for i in range(len(class_labels))
-    }
-    top_class = class_labels[np.argmax(predictions)]
+    threshold = 0.3
 
-    # Fetch recommended products for top class
+    # TensorFlow model prediction (Acne, Pigmentation, Wrinkles)
+    tf_input = preprocess_for_tf(image_path)
+    tf_preds = skin_model.predict(tf_input)[0]
+    tf_results = {skin_labels[i]: bool(tf_preds[i] >= threshold) for i in range(len(skin_labels))}
+
+    # Torch model prediction (Dark circles) using Ultralytics YOLO
+    print(f"Running YOLO detection on {image_path} with conf threshold {threshold}...")
+    detections = dark_model.predict(image_path, imgsz=640, conf=threshold, verbose=False)[0]
+
+    print("Raw YOLO detection output:")
+    print(detections)
+
+    boxes = detections.boxes
+    if boxes is not None and len(boxes) > 0:
+        confidences = boxes.conf.cpu().numpy()
+        classes = boxes.cls.cpu().numpy()
+        print(f"Detected {len(boxes)} boxes:")
+        for i, conf in enumerate(confidences):
+            cls_id = int(classes[i])
+            label = dark_label[cls_id] if cls_id < len(dark_label) else f"class_{cls_id}"
+            print(f" - Box {i}: class={label}, confidence={conf:.3f}")
+        detected = any(conf > threshold for conf in confidences)
+    else:
+        print("No boxes detected by YOLO.")
+        detected = False
+
+    torch_results = {dark_label[0]: detected}
+
+    # Merge both results
+    prediction_dict = {**tf_results, **torch_results}
+
+    # Use the highest confidence from TF model to fetch products
+    top_class = skin_labels[int(np.argmax(tf_preds))]
     mongo = current_app.mongo
     raw_products = list(mongo.db.products.find(
         {"Skin Concerns": top_class}, {"_id": 0}).limit(50))

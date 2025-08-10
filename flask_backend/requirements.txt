@@ -10,3 +10,6 @@ PyJWT
 pymongo
 dnspython
 flask-pymongo
+torch
+torchvision
+torchaudio
