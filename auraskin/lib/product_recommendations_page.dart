@@ -23,6 +23,7 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
   final Set<int> _expandedIndices = {};
 
   List<String> _skinConcernFilters = ['All'];
+  bool _hasConcerns = false;
 
   @override
   void initState() {
@@ -30,25 +31,43 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
 
     _displayedProducts = List.from(widget.products);
 
+    // Extract unique concerns from products
     final productConcerns = widget.products
         .map((p) => (p['skin_concern'] ?? '').toString())
         .where((c) => c.isNotEmpty)
         .toSet();
 
-    final trueConcerns = <String>{};
+    // Extract concerns detected from modelOutput with truthy values
+    final detectedConcerns = <String>{};
     if (widget.modelOutput != null) {
       widget.modelOutput!.forEach((key, value) {
-        if (value == true ) {
-          trueConcerns.add(key);
+        if (_isTruthy(value)) {
+          detectedConcerns.add(key);
         }
       });
-
-      print('modelOutput: ${widget.modelOutput}');
-      print('trueConcerns: $trueConcerns');
-      print('_skinConcernFilters: $_skinConcernFilters');
     }
 
-    _skinConcernFilters = ['All', ...productConcerns, ...trueConcerns].toSet().toList();
+    // Combine all concerns found from products and model output for dropdown filters
+    _skinConcernFilters = ['All', ...detectedConcerns.toList(), ...productConcerns.toList()];
+    _skinConcernFilters = _skinConcernFilters.toSet().toList(); // remove duplicates
+
+    _hasConcerns = detectedConcerns.isNotEmpty;
+
+    // Ensure selected filter is valid
+    if (!_skinConcernFilters.contains(_selectedFilter)) {
+      _selectedFilter = _skinConcernFilters.isNotEmpty ? _skinConcernFilters[0] : 'All';
+    }
+  }
+
+  bool _isTruthy(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final lower = value.toLowerCase();
+      return lower == 'true' || lower == '1' || lower == 'yes';
+    }
+    return false;
   }
 
   List<dynamic> _filteredProducts() {
@@ -56,7 +75,7 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
       final name = product['product']?.toString().toLowerCase() ?? '';
       final concern = product['skin_concern']?.toString() ?? '';
       final matchesSearch = _searchText.isEmpty || name.contains(_searchText.toLowerCase());
-      final matchesFilter = _selectedFilter == 'All' || concern == _selectedFilter;
+      final matchesFilter = _selectedFilter == 'All' || concern.toLowerCase() == _selectedFilter.toLowerCase();
       return matchesSearch && matchesFilter;
     }).toList();
 
@@ -83,7 +102,19 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredProducts();
+    if (!_hasConcerns) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Recommended Products')),
+        body: const Center(
+          child: Text(
+            'No significant skin issues detected',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+          ),
+        ),
+      );
+    }
+
+    final filteredProducts = _filteredProducts();
 
     return Scaffold(
       backgroundColor: Colors.brown[100],
@@ -93,23 +124,6 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
       ),
       body: Column(
         children: [
-          if (widget.modelOutput != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Model Prediction:", style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...widget.modelOutput!.entries.map((entry) {
-                    return Text(
-                      "${entry.key}: ${(entry.value * 100).toStringAsFixed(2)}%",
-                      style: const TextStyle(fontSize: 14),
-                    );
-                  }).toList(),
-                ],
-              ),
-            ),
-
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: TextField(
@@ -129,8 +143,8 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                "Sort by Skin Concern",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                "Filter by Skin Concern",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),
@@ -145,7 +159,7 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
               ),
               child: DropdownButton<String>(
                 isExpanded: true,
-                underline: SizedBox(),
+                underline: const SizedBox(),
                 value: _selectedFilter,
                 items: _skinConcernFilters
                     .map((filter) => DropdownMenuItem(value: filter, child: Text(filter)))
@@ -163,7 +177,7 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
               alignment: Alignment.centerLeft,
               child: Text(
                 "Sort by Price and Rating",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
           ),
@@ -178,7 +192,7 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
               ),
               child: DropdownButton<String>(
                 isExpanded: true,
-                underline: SizedBox(),
+                underline: const SizedBox(),
                 value: _sortOption,
                 items: const [
                   DropdownMenuItem(value: 'default', child: Text("Default")),
@@ -197,15 +211,22 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
           ),
 
           Expanded(
-            child: ListView.builder(
+            child: filteredProducts.isEmpty
+                ? const Center(child: Text('No products found'))
+                : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: filtered.length,
+              itemCount: filteredProducts.length,
               itemBuilder: (context, index) {
-                final product = filtered[index];
+                final product = filteredProducts[index];
                 final isExpanded = _expandedIndices.contains(index);
 
-                final ingredients = (product['ingredients'] ?? '').toString().split(',').map((e) => e.trim()).toList();
-                final displayedIngredients = isExpanded ? ingredients : ingredients.take(3).toList();
+                final ingredients = (product['ingredients'] ?? '')
+                    .toString()
+                    .split(',')
+                    .map((e) => e.trim())
+                    .toList();
+                final displayedIngredients =
+                isExpanded ? ingredients : ingredients.take(3).toList();
                 final showToggle = ingredients.length > 3;
 
                 return Container(
@@ -224,7 +245,8 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
                           children: [
                             const TextSpan(
                               text: "Product Name: ",
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              style:
+                              TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                             TextSpan(
                               text: product['product'] ?? '',
@@ -248,7 +270,8 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
                       Text.rich(
                         TextSpan(
                           children: [
-                            const TextSpan(text: "Type: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const TextSpan(
+                                text: "Type: ", style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(text: product['type'] ?? ''),
                           ],
                         ),
@@ -256,7 +279,9 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
                       Text.rich(
                         TextSpan(
                           children: [
-                            const TextSpan(text: "Ingredients: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const TextSpan(
+                                text: "Ingredients: ",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(text: displayedIngredients.join(', ')),
                           ],
                         ),
@@ -280,16 +305,24 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
                       Text.rich(
                         TextSpan(
                           children: [
-                            const TextSpan(text: "Reviews: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                            TextSpan(text: "${(double.tryParse(product['reviews']?.toString() ?? '') ?? 0).toStringAsFixed(1)}/5",),
+                            const TextSpan(
+                                text: "Reviews: ",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                                text:
+                                "${(double.tryParse(product['reviews']?.toString() ?? '') ?? 0).toStringAsFixed(1)}/5"),
                           ],
                         ),
                       ),
                       Text.rich(
                         TextSpan(
                           children: [
-                            const TextSpan(text: "Price: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                            TextSpan(text: "${product['price']?.toString() ?? 'N/A'} BDT (Prices may vary with time)",),
+                            const TextSpan(
+                                text: "Price: ",
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                            TextSpan(
+                                text:
+                                "${product['price']?.toString() ?? 'N/A'} BDT (Prices may vary with time)"),
                           ],
                         ),
                       ),

@@ -121,6 +121,7 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
                       MaterialPageRoute(
                         builder: (context) => ProductRecommendationsPage(
                           products: _productRecommendations!,
+                          modelOutput: Map<String, dynamic>.from(jsonResponse['analysis']),
                         ),
                       ),
                     );

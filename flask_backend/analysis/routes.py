@@ -155,6 +155,7 @@ def skin_type_recommendations():
 
 @analysis_bp.route('/analyze_skin', methods=['POST'])
 def analyze_skin():
+    mongo = current_app.mongo
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
@@ -211,16 +212,19 @@ def analyze_skin():
         print("No boxes detected by YOLO.")
         detected = False
 
-    torch_results = {dark_label[0]: detected}
+    torch_results = {"Dark Circles": detected}
 
     # Merge both results
     prediction_dict = {**tf_results, **torch_results}
 
-    # Use the highest confidence from TF model to fetch products
-    top_class = skin_labels[int(np.argmax(tf_preds))]
-    mongo = current_app.mongo
-    raw_products = list(mongo.db.products.find(
-        {"Skin Concerns": top_class}, {"_id": 0}).limit(50))
+    # Get all detected concerns where prediction is True
+    detected_concerns = [k for k, v in prediction_dict.items() if v]
+
+    if detected_concerns:
+        or_filters = [{"Skin Concerns": {"$regex": f"^{concern}$", "$options": "i"}} for concern in detected_concerns]
+        raw_products = list(mongo.db.products.find({"$or": or_filters}, {"_id": 0}).limit(100))
+    else:
+        raw_products = []
 
     recommended_products = []
     for product in raw_products:
@@ -231,7 +235,7 @@ def analyze_skin():
             "ingredients": str(product.get("Ingredients", "")).strip(),
             "reviews": str(product.get("Reviews", "")).strip(),
             "price": str(product.get("Price", "")).strip()
-        })
+    })
 
     return jsonify({
         "face_detected": True,
