@@ -109,27 +109,95 @@ class _SkinAnalysisPageState extends State<SkinAnalysisPage> {
 
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text("Skin Analysis Result"),
-              content: Text("You have $_analysisResult"),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProductRecommendationsPage(
-                          products: _productRecommendations!,
-                          modelOutput: Map<String, dynamic>.from(jsonResponse['analysis']),
+            builder: (context) {
+              final Map<String, dynamic> analysisMap = Map<String, dynamic>.from(jsonResponse['analysis']);
+
+              List<Widget> concernWidgets = analysisMap.entries.map((entry) {
+                return Row(
+                  children: [
+                    Icon(
+                      entry.value
+                          ? Icons.warning_amber_rounded
+                          : Icons.emoji_emotions,
+                      color: entry.value ? Colors.orange : Colors.green,
+                    ),
+                    const SizedBox(width: 8),
+                    RichText(
+                      text: TextSpan(
+                        text: "${entry.key}: ",
+                        style: TextStyle(fontSize: 16, color: Colors.black),
+                        children: [
+                          TextSpan(
+                            text: entry.value ? "Present" : "Not Detected",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }).toList();
+
+              return AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                title: Row(
+                  children: const [
+                    Icon(Icons.face_retouching_natural, color: Colors.purple),
+                    SizedBox(width: 10),
+                    Text("Skin Analysis Result"),
+                  ],
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...concernWidgets,
+                    const SizedBox(height: 15),
+                    Text(
+                      "Tap below to see recommended products tailored for your skin.",
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+                actions: [
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        shadowColor: Colors.brown,
+                        elevation: 5,
+                      ),
+                      icon: const Icon(Icons.shopping_bag, color: Colors.white),
+                      label: const Text(
+                        "See Recommendations",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
                         ),
                       ),
-                    );
-                  },
-                  child: const Text("See recommended products to overcome your skin problem"),
-                ),
-              ],
-            ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProductRecommendationsPage(
+                              products: _productRecommendations!,
+                              modelOutput: analysisMap,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
           );
         } else {
           setState(() => _isProcessing = false);

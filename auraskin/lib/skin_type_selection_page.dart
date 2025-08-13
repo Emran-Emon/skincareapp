@@ -41,37 +41,64 @@ class SkinTypeSelectionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Select Your Skin Type')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.brown,
-                padding: const EdgeInsets.all(30),
-              ),
-              onPressed: () => _handleSelection(context, "Dry"),
-              child: const Text(
-                "Dry Skin",
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
+      body: Stack(
+        children: [
+          Image.asset(
+            'assets/background.jpg',
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
+          ),
+
+          //overlay to make buttons readable
+          Container(
+            color: Colors.white.withOpacity(0.2),
+          ),
+
+          // Main content
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.brown.withOpacity(0.8),
+                    // semi-transparent
+                    padding: const EdgeInsets.all(30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          15), // rounded corners
+                    ),
+                  ),
+                  onPressed: () => _handleSelection(context, "Dry"),
+                  child: const Text(
+                    "Dry Skin",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.brown.withOpacity(0.8),
+                    // semi-transparent
+                    padding: const EdgeInsets.all(30),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          15), // rounded corners
+                    ),
+                  ),
+                  onPressed: () => _handleSelection(context, "Oily"),
+                  child: const Text(
+                    "Oily Skin",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.brown,
-                padding: const EdgeInsets.all(30),
-              ),
-              onPressed: () => _handleSelection(context, "Oily"),
-              child: const Text(
-                "Oily Skin",
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

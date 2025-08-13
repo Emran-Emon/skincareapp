@@ -102,17 +102,6 @@ class _ProductRecommendationsPageState extends State<ProductRecommendationsPage>
 
   @override
   Widget build(BuildContext context) {
-    if (!_hasConcerns) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Recommended Products')),
-        body: const Center(
-          child: Text(
-            'No significant skin issues detected',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-          ),
-        ),
-      );
-    }
 
     final filteredProducts = _filteredProducts();
 

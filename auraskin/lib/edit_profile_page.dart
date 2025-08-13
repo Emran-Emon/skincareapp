@@ -92,71 +92,101 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Edit Profile')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(labelText: 'Username'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your username';
-                  }
-                  if (value.length < 3) {
-                    return 'Username must be at least 3 characters long';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(labelText: 'Email'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                    return 'Invalid email address';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(labelText: 'New Password'),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a new password';
-                  }
-                  if (value.length < 8) {
-                    return 'Password must be at least 8 characters long';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: InputDecoration(labelText: 'Confirm Password'),
-                obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: updateProfile,
-                child: Text('Update Profile'),
-              ),
-            ],
+      body: Stack(
+        children: [
+          Image.asset(
+            'assets/background.jpg',
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
           ),
-        ),
+
+          // Original form content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _usernameController,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your username';
+                        }
+                        if (value.length < 3) {
+                          return 'Username must be at least 3 characters long';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                          return 'Invalid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        labelText: 'New Password',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a new password';
+                        }
+                        if (value.length < 8) {
+                          return 'Password must be at least 8 characters long';
+                        }
+                        return null;
+                      },
+                    ),
+                    TextFormField(
+                      controller: _confirmPasswordController,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.8),
+                      ),
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: updateProfile,
+                      child: Text('Update Profile'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

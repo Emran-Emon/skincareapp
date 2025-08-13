@@ -135,10 +135,14 @@ def preprocess_for_torch(image_path):
 @analysis_bp.route('/skin_type_recommendations', methods=['GET'])
 def skin_type_recommendations():
     skin_type = request.args.get('type', '').strip()
-    query_field = f"{skin_type} Skin"
 
     mongo = current_app.mongo
-    raw_products = mongo.db.products.find({"Skin Concerns": query_field})
+    raw_products = mongo.db.products.find({
+        "Skin Concerns": {
+            "$regex": f"^{skin_type}\\s*Skin$",  # matches "Dry Skin", "Oily Skin"
+            "$options": "i"  # case-insensitive
+        }
+    })
 
     recommended_products = []
     for product in raw_products:

@@ -178,6 +178,9 @@ PODS:
     - nanopb/encode (= 2.30908.0)
   - nanopb/decode (2.30908.0)
   - nanopb/encode (2.30908.0)
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - PromisesObjC (2.4.0)
   - Protobuf (3.29.4)
   - SSZipArchive (2.4.3)
@@ -189,6 +192,7 @@ DEPENDENCIES:
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - Flutter (from `Flutter`)
   - google_ml_kit (from `.symlinks/plugins/google_ml_kit/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - webview_flutter_wkwebview (from `.symlinks/plugins/webview_flutter_wkwebview/darwin`)
 
 SPEC REPOS:
@@ -234,6 +238,8 @@ EXTERNAL SOURCES:
     :path: Flutter
   google_ml_kit:
     :path: ".symlinks/plugins/google_ml_kit/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   webview_flutter_wkwebview:
     :path: ".symlinks/plugins/webview_flutter_wkwebview/darwin"
 
@@ -271,6 +277,7 @@ SPEC CHECKSUMS:
   MLKitVisionKit: 226bac429eda1d84285409e31ce9da72606850fb
   MLKitXenoCommon: bf5b3528d77cabe0d04f3c13536ba1302346e31c
   nanopb: a0ba3315591a9ae0a16a309ee504766e90db0c96
+  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   Protobuf: 2e6de032ba12b9efb390ae550d1a243a5b19ddfc
   SSZipArchive: fe6a26b2a54d5a0890f2567b5cc6de5caa600aef
